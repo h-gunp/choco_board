@@ -1,0 +1,75 @@
+body {
+    background-color: #f4f4f4;
+    color: #333333;
+}
+
+.container {
+    max-width: 768px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: white; 
+    border: 1px solid #dddddd;
+}
+
+h1 {
+    font-size: 36px;
+    color: #4a3f35;
+}
+
+h1 a {
+    text-decoration: none;
+    color: inherit;
+}
+
+li {
+    margin-bottom: 8px;
+}
+
+h2 {
+    font-size: 28px;
+}
+
+input[type="text"],
+textarea {
+    width: 98%;
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #cccccc;
+}
+
+textarea {
+    min-height: 150px;
+}
+
+input[type="button"],
+input[type="submit"] {
+    background-color: #6a4c3c;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    cursor: pointer; 
+}
+
+input[value="삭제하기"] {
+    background-color: #e45651;
+}
+
+.paging {
+    text-align: center;
+    margin-top: 20px;
+}
+.paging a, .paging span {
+    margin: 0 5px;
+    padding: 8px 12px;
+    text-decoration: none;
+    border: 1px solid #ddd;
+    color: #4a4c3c;
+}
+.paging .current_page {
+    background-color: #6a4c3c;
+    color: white;
+    border-color: #6a4c3c;
+}
+.paging a:hover {
+    background-color: #f4f4f4;
+}

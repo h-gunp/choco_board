@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>검색결과</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1><em><a href="/">초코파이 인사이드...</a></em></h1>
+        <hr>
+        <ol>
+                <h3><em><mark>{{ search_name }}</mark></em> 게시글 목록</h3>
+                {% if things %}
+                    {% for thing in things %}
+                        <li><a href="/read/{{ thing.id }}/">{{ thing.title }}</a></li>
+                    {% endfor %}
+                {% else %}
+                    <li>게시글이 없습니다.</li>
+                {% endif %}
+        </ol>
+        <br>
+    </div>
+</body>
+</html>
+        

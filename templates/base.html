@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ko">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+            <title>초코파이 인사이드</title>
+        </head>
+    <div class="container">
+        <body>
+            <h1><em><a href="/">초코파이 인사이드...</a></em></h1>
+            <hr><p>초코파이에 대해 토론하는 곳 입니다..</p><hr>
+        
+        <ol>
+            <h3>게시글 목록</h3>
+            {% if topics %}
+                {% for topic in topics %}
+                    <li><a href="/read/{{ topic.id }}">{{ topic.title }}</a></li>
+                {% endfor %}
+            {% else %}
+                <li>게시글이 없습니다.</li>
+            {% endif %}
+        </ol>
+        
+        <hr>
+
+        <div class="paging">
+            {% if current_page > 1 %}
+                <a href="?page={{ current_page - 1}}"> &laquo;이전 </a>
+            {% endif %}
+
+            {% for page_num in range(1, last_page + 1) %}
+                {% if page_num == current_page %}
+                    <span class="current_page"> {{ page_num }} </span>
+                {% else %}
+                    <a href="?page={{ page_num }}"> {{ page_num }} </a>
+                {% endif %}
+            {% endfor %}
+
+            {% if current_page < last_page %}
+                <a href="?page={{ current_page + 1 }}">  다음&raquo; </a>
+            {% endif %}
+        </div>
+        
+        <br><br>
+        
+        <a href="/create/"><input type="button" value="글쓰기"></a>
+        
+            <form action="/search/" method="GET">
+                <select name="search_menu">
+                    <option value="title">제목</option>
+                    <option value="body">내용</option>
+                    <option value="title_body">제목+내용</option>
+                </select>
+
+                <input type="text" placeholder="입력하시오." name="search_name" style ="width: 250px; padding: 5px;">
+                <a href="search.html"><input type="submit" value="검색"></a>
+            </form>
+        </body>
+    </div>
+</html>

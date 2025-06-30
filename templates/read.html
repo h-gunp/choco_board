@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <title>{{ topic.title }}</title>
+</head>
+<div class="container">
+    <body>
+        <h1><em><a href="/">초코파이 인사이드...</a></em></h1>
+        <hr><p>초코파이에 대해 토론하는 곳 입니다..</p><hr>
+        
+            <h2>{{ topic.title }}</h2>
+            <p>{{ topic.body }}</p>
+    
+            <a href="/update/{{ topic.id }}"><input type="button" value="수정하기"></a>
+            <form action="/delete/{{ topic.id }}" method="POST" style="display: inline;">
+                <input type="submit" value="삭제하기" onclick="return confirm('정말로 삭제하시겠습니까?');">
+            </form>
+            <a href="/"><input type="button" value="목록"></a>
+    </body>
+</div>
+</html>

@@ -41,6 +41,25 @@ textarea {
     min-height: 150px;
 }
 
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.nav a {
+    margin-left: 15px;
+    text-decoration: none;
+    color: #6a4c3c;
+}
+
+.flash {
+    background: #e6f7ff;
+    border: 1px solid #91d5ff;
+    padding: 10px;
+    margin-bottom: 20px;
+}
+
 input[type="button"],
 input[type="submit"] {
     background-color: #6a4c3c;

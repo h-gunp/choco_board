@@ -31,7 +31,6 @@ def init_db():
         with conn.cursor() as cursor:
                     cursor.execute(f"CREATE DATABASE IF NOT EXISTS {db_name}")
                     conn.select_db(db_name)
-                    conn.commit()
 
         with conn.cursor() as cursor:
             create_table_sql = """
@@ -42,8 +41,21 @@ def init_db():
             )
             """
             cursor.execute(create_table_sql)
-            conn.commit()
-            print("데이터베이스 연결 완료.")
+
+        with conn.cursor() as cursor:
+            create_table_sql = """
+            CREATE TABLE IF NOT EXISTS users (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            user_id VARCHAR(100) NOT NULL,
+            user_ps VARCHAR(255) NOT NULL,
+            user_name VARCHAR(100) NOT NULL,
+            user_school VARCHAR(100) NOT NULL
+            )
+            """
+            cursor.execute(create_table_sql)
+            
+        conn.commit()    
+        print("데이터베이스 연결 완료.")
 
     except Exception as e:
         print(f"오류 발생: {e}")
@@ -96,15 +108,136 @@ def main():
         print(f"데이터베이스 조회 오류: {e}")
         topics_from_db = []
         page, last_page = 1, 1
+
     finally:
         if conn:
             conn.close()
 
     return render_template('base.html', topics=topics_from_db, current_page=page, last_page = last_page)
 
+@app.route("/register", methods = ['GET', 'POST'])
+def register():
+    conn = None
+    
+    try:
+        if request.method == 'GET':
+            return render_template('register.html')
+
+        if request.method == 'POST':
+            user_id = request.form['user_id']
+            user_ps = request.form['user_ps']
+            user_name = request.form['user_name']
+            user_school = request.form['user_school']
+        
+        hashed_ps = generate_password_hash(user_ps)
+        conn = get_db_connection()
+        
+        with conn.cursor() as cursor:
+            sql = "SELECT * FROM users WHERE user_id = %s"
+            cursor.execute(sql, (user_id))
+            current_user = cursor.fetchone()
+
+            if current_user:
+                flash('이미 존재하는 ID입니다!')
+                return redirect(url_for('register'))
+            else:
+                with conn.cursor() as cursor:
+                    sql = "INSERT INTO users (user_id, user_ps, user_name, user_school) VALUES (%s, %s, %s, %s)"
+                    cursor.execute(sql, (user_id, hashed_ps, user_name, user_school))
+                    conn.commit()
+                    flash('회원가입 성공! 로그인을 진행해주세요')
+                    return redirect(url_for('main'))
+        
+    except Exception as e:
+        print(f"데이터베이스 조회 오류: {e}")
+        return "오류가 발생했습니다. <a href='/'>돌아가기</a>"
+    
+    finally:
+        if conn:
+            conn.close()
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    conn = None
+
+    if request.method == 'GET':
+        return render_template('login.html')
+
+    if request.method == 'POST':
+        user_id = request.form['user_id']
+        user_ps = request.form['user_ps']
+
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cursor:
+            sql = "SELECT * FROM users WHERE user_id = %s"
+            cursor.execute(sql, (user_id))
+            current_user_info = cursor.fetchone()
+
+        if current_user_info is None:
+            return "존재하지 않는 사용자입니다. <a href='/'>돌아가기</a>"
+        
+    
+        if check_password_hash(current_user_info['user_ps'], user_ps):
+            session['logged_in'] = True
+            session['user_id'] = current_user_info['user_id']
+            session['user_name'] = current_user_info['user_name']
+            flash('로그인에 성공했습니다.')
+            return redirect(url_for('main'))
+        else:
+            flash('아이디 혹은 비밀번호가 일치하지 않습니다.')
+            return redirect(url_for('main'))
+        
+    except Exception as e:
+        print(f"데이터베이스 조회 오류: {e}")
+        return "오류가 발생했습니다. <a href='/'>돌아가기</a>"
+    
+    finally:
+        if conn:
+            conn.close()
+
+@app.route('/logout')
+def logout():
+    if session['logged_in'] == True:
+        session.clear()
+        flash('로그아웃 되었습니다.')
+        return redirect(url_for('main'))
+    
+@app.route('/profile')
+def profile():
+    conn = None
+
+    if 'logged_in' not in session:
+        flash('로그인이 필요한 서비스입니다.')
+        return redirect(url_for('main'))
+    
+    try:
+        conn = get_db_connection()
+        name = session['user_name']
+        user_info = []
+        with conn.cursor() as cursor:
+            sql = "SELECT * FROM users WHERE user_id = %s"
+            cursor.execute(sql, (name))
+            user_info = cursor.fetchone()
+            return render_template('profile.html', user=user_info)
+
+    except Exception as e:
+        print(f"데이터베이스 조회 오류: {e}")
+        return "오류가 발생했습니다. <a href='/'>돌아가기</a>"
+    
+    finally:
+        if conn:
+            conn.close()    
+
+
 @app.route('/read/<int:id>/')
 def read(id):
     conn = None
+
+    if 'logged_in' not in session:
+        flash('로그인이 필요한 서비스입니다.')
+        return redirect(url_for('main'))
+    
     try:
         conn = get_db_connection()
 
@@ -129,6 +262,9 @@ def read(id):
 @app.route('/create/', methods=['GET', 'POST'])
 def create():
     conn = None
+    if 'logged_in' not in session:
+        flash('로그인이 필요한 서비스입니다.')
+        return redirect(url_for('main'))
     try:
         conn = get_db_connection()
         
@@ -157,6 +293,9 @@ def create():
 @app.route('/update/<int:id>', methods=['GET', 'POST'])
 def update(id):
     conn = None
+    if 'logged_in' not in session:
+        flash('로그인이 필요한 서비스입니다.')
+        return redirect(url_for('main'))
     try:
         conn = get_db_connection()
         
@@ -191,6 +330,9 @@ def update(id):
 @app.route('/delete/<int:id>', methods=['POST'])
 def delete(id):
     conn = None
+    if 'logged_in' not in session:
+        flash('로그인이 필요한 서비스입니다.')
+        return redirect(url_for('main'))
     try:
         conn = get_db_connection()
         with conn.cursor() as cursor:

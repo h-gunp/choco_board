@@ -19,6 +19,11 @@ db_config = {
     'charset': 'utf8mb4'
 }
 
+UPLOAD_FOLDER = 'uploads'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+
 def init_db():
 
     config = db_config
@@ -37,7 +42,9 @@ def init_db():
             CREATE TABLE IF NOT EXISTS topic (
             id INT PRIMARY KEY AUTO_INCREMENT,
             title VARCHAR(255) NOT NULL,
-            body TEXT NOT NULL
+            body TEXT NOT NULL,
+            user_name VARCHAR(100) NOT NULL
+
             )
             """
             cursor.execute(create_table_sql)
@@ -49,7 +56,20 @@ def init_db():
             user_id VARCHAR(100) NOT NULL,
             user_ps VARCHAR(255) NOT NULL,
             user_name VARCHAR(100) NOT NULL,
-            user_school VARCHAR(100) NOT NULL
+            user_school VARCHAR(100) NOT NULL,
+            profile_image VARCHAR(255)
+            )
+            """
+            cursor.execute(create_table_sql)
+
+        with conn.cursor() as cursor:
+            create_table_sql = """
+            CREATE TABLE IF NOT EXISTS files (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            topic_id INT NOT NULL,
+            file_name VARCHAR(255) NOT NULL,
+            file_path VARCHAR(255) NOT NULL,
+            FOREIGN KEY (topic_id) REFERENCES topic(id) ON DELETE CASCADE
             )
             """
             cursor.execute(create_table_sql)
@@ -128,6 +148,10 @@ def register():
             user_ps = request.form['user_ps']
             user_name = request.form['user_name']
             user_school = request.form['user_school']
+
+        # if " " in user_id or user_ps:
+        #     flash('아이디와 패스워드에 공백이 포함되면 안됩니다.')
+        #     return redirect(url_for('register'))
         
         hashed_ps = generate_password_hash(user_ps)
         conn = get_db_connection()
@@ -203,7 +227,7 @@ def logout():
         flash('로그아웃 되었습니다.')
         return redirect(url_for('main'))
     
-@app.route('/profile')
+@app.route('/profile/')
 def profile():
     conn = None
 
@@ -213,11 +237,11 @@ def profile():
     
     try:
         conn = get_db_connection()
-        name = session['user_name']
+        id = session['user_id']
         user_info = []
         with conn.cursor() as cursor:
             sql = "SELECT * FROM users WHERE user_id = %s"
-            cursor.execute(sql, (name))
+            cursor.execute(sql, (id))
             user_info = cursor.fetchone()
             return render_template('profile.html', user=user_info)
 
@@ -227,8 +251,29 @@ def profile():
     
     finally:
         if conn:
-            conn.close()    
+            conn.close()
 
+@app.route('/profileEdit', methods=['GET', 'POST'])
+def profileEdit():
+
+    if request.method == 'GET':
+        try:
+            conn = get_db_connection()
+            id = session['user_id']
+            user_info = []
+            with conn.cursor() as cursor:
+                sql = "SELECT * FROM users WHERE user_id = %s"
+                cursor.execute(sql, (id))
+                user_info = cursor.fetchone()
+                return render_template('profileEdit.html', user=user_info)
+
+        except Exception as e:
+            print(f"데이터베이스 조회 오류: {e}")
+            return "오류가 발생했습니다. <a href='/'>돌아가기</a>"
+        
+        finally:
+            if conn:
+                conn.close()
 
 @app.route('/read/<int:id>/')
 def read(id):
@@ -243,13 +288,19 @@ def read(id):
 
         with conn.cursor() as cursor:
             sql = "SELECT * FROM topic WHERE id = %s"
-            cursor.execute(sql, (id,))
-            topic = cursor.fetchone() 
+            cursor.execute(sql, (id))
+            topic = cursor.fetchone()
 
         if topic is None:
             return "존재하지 않는 게시글입니다. <a href='/'>돌아가기</a>"
+        
+        with conn.cursor() as cursor:
+            conn = get_db_connection()
+            sql="SELECT topic_id, file_name, file_path FROM files WHERE topic_id = %s"
+            cursor.execute(sql, (id))
+            file_info = cursor.fetchone()
 
-        return render_template('read.html',topic=topic)
+        return render_template('read.html',topic=topic, file=file_info)
 
     except Exception as e:
         print(f"데이터베이스 조회 오류: {e}")
@@ -271,13 +322,23 @@ def create():
         if request.method == 'POST':
             title = request.form['title']
             body = request.form['body']
+            user_name = session['user_name']
             
+
             with conn.cursor() as cursor:
-                sql = "INSERT INTO topic (title, body) VALUES (%s, %s)"
-                cursor.execute(sql, (title, body))
-                conn.commit()
+                sql = "INSERT INTO topic (title, body, user_name) VALUES (%s, %s, %s)"
+                cursor.execute(sql, (title, body, user_name))
                 new_id = cursor.lastrowid
+
+                if request.files['file']:
+                    f = request.files['file']
+                    f.save('uploads/'+ secure_filename(f.filename))
+                    sql = "INSERT INTO files (topic_id, file_name, file_path) VALUES (%s, %s, %s)"
+                    cursor.execute(sql, (new_id, secure_filename(f.filename), 'uploads/'+ secure_filename(f.filename)))
+
+                conn.commit()
                 return redirect(f'/read/{new_id}/')
+            
 
         else: # request.method == 'GET'
             return render_template('create.html')
@@ -289,6 +350,23 @@ def create():
     finally:
         if conn:
             conn.close() 
+
+@app.route('/download/<int:topic_id>')
+def download(topic_id):
+    conn = None
+
+    conn = get_db_connection()
+    with conn.cursor() as cursor:
+        sql = "SELECT file_name, file_path FROM files WHERE id = %s"
+        cursor.execute(sql, (topic_id))
+        file_info = cursor.fetchone()
+
+    if file_info:
+        file_name = file_info['file_name']
+        file_path = file_info['file_path']
+        directroy = os.path.dirname(file_path)
+        
+        return send_from_directory(directroy, file_name, as_attachment=True)
 
 @app.route('/update/<int:id>', methods=['GET', 'POST'])
 def update(id):

@@ -13,6 +13,16 @@
         
             <h2>{{ topic.title }}</h2>
             <p>{{ topic.body }}</p>
+
+            {% if file %}
+                <hr>
+                <p>
+                    <strong>첨부파일:</strong>
+                    <a href="{{ url_for('download', topic_id=file.topic_id) }}">
+                        {{ file.file_name }}
+                    </a>
+                </p>
+            {% endif %}
     
             <a href="/update/{{ topic.id }}"><input type="button" value="수정하기"></a>
             <form action="/delete/{{ topic.id }}" method="POST" style="display: inline;">

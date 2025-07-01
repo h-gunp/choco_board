@@ -16,10 +16,11 @@
             {% else %}
                 <p><strong>프로필 이미지가 없습니다.</strong></p>
             {% endif %}
-            <P><strong>이름</strong>:{{ user.user_name }}</P>
-            <P><strong>학교</strong>:{{ user.user_school }}</P>
-
-            <a href="/profileEdit">프로필 수정</a>
+            <form name="profile_image" action="/profileEdit" method="POST" enctype="multipart/form-data"></form>
+                
+                <input type="file" name="file">
+                <p><input type="submit" value="수정완료"></p>
+            </form> 
         </body>
     </div>
 </html>

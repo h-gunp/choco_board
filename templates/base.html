@@ -12,7 +12,7 @@
                 <h1><em><a href="/">초코파이 인사이드...</a></em></h1>
                 <div class="nav">
                     {% if session['logged_in'] == True %}
-                        <a href="/profile">내 프로필</a>
+                        <a href="/profile/{{ session.user_id }}">내 프로필</a>
                         <a href="/logout">로그아웃</a>
                     {% else %}    
                         <a href="/login">로그인</a> 

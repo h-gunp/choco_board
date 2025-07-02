@@ -44,7 +44,6 @@ def init_db():
             title VARCHAR(255) NOT NULL,
             body TEXT NOT NULL,
             user_name VARCHAR(100) NOT NULL
-
             )
             """
             cursor.execute(create_table_sql)
@@ -56,7 +55,7 @@ def init_db():
             user_id VARCHAR(100) NOT NULL,
             user_ps VARCHAR(255) NOT NULL,
             user_name VARCHAR(100) NOT NULL,
-            user_school VARCHAR(100) NOT NULL,
+            user_school VARCHAR(100),
             profile_image VARCHAR(255)
             )
             """
@@ -227,8 +226,8 @@ def logout():
         flash('로그아웃 되었습니다.')
         return redirect(url_for('main'))
     
-@app.route('/profile/')
-def profile():
+@app.route('/profile/<user_id>')
+def profile(user_id):
     conn = None
 
     if 'logged_in' not in session:
@@ -237,11 +236,11 @@ def profile():
     
     try:
         conn = get_db_connection()
-        id = session['user_id']
+        user_id = session['user_id']
         user_info = []
         with conn.cursor() as cursor:
             sql = "SELECT * FROM users WHERE user_id = %s"
-            cursor.execute(sql, (id))
+            cursor.execute(sql, (user_id,))
             user_info = cursor.fetchone()
             return render_template('profile.html', user=user_info)
 
@@ -253,20 +252,52 @@ def profile():
         if conn:
             conn.close()
 
-@app.route('/profileEdit', methods=['GET', 'POST'])
+@app.route('/profile/edit', methods=['GET', 'POST'])
 def profileEdit():
-
-    if request.method == 'GET':
+        conn = None
+        conn = get_db_connection()
+        id = session['user_id']
+        user_info = []
+        
         try:
-            conn = get_db_connection()
-            id = session['user_id']
-            user_info = []
-            with conn.cursor() as cursor:
-                sql = "SELECT * FROM users WHERE user_id = %s"
-                cursor.execute(sql, (id))
-                user_info = cursor.fetchone()
-                return render_template('profileEdit.html', user=user_info)
+            if request.method == 'GET':
+                with conn.cursor() as cursor:
+                    sql = "SELECT * FROM users WHERE user_id = %s"
+                    cursor.execute(sql, (id,))
+                    user_info = cursor.fetchone()
+                    return render_template('profileEdit.html', user=user_info)
+            else:
+                if request.method == 'POST':
+                    user_name = request.form['user_name']   
+                    user_school = request.form['user_school']
+                    profile_image = request.files.get('profile_image')
+                    
+                    if profile_image and profile_image.filename:
+                        with conn.cursor() as cursor:
+                            sql = "SELECT profile_image FROM users WHERE user_id = %s"
+                            cursor.execute(sql, (id,))
+                            old_image = cursor.fetchone()
+                            if old_image and old_image['profile_image']:
+                                old_image_path = os.path.join(app.config['UPLOAD_FOLDER'], old_image['profile_image'])
+                                if os.path.exists(old_image_path):
+                                    os.remove(old_image_path)
+                    
+                        new_image = secure_filename(f"profile_{user_name}_{profile_image.filename}")
+                        new_image_path = os.path.join(app.config['UPLOAD_FOLDER'], new_image)
+                        profile_image.save(new_image_path)
+                        
+                        with conn.cursor() as cursor:
+                            sql = "UPDATE users SET user_name=%s user_school=%s profile_image=%s WHERE user_id=%s"
+                            cursor.execute(sql, (user_name, user_school, new_image, id))
+                            conn.commit()
+                    else:
+                        with conn.cursor() as cursor:
+                            sql = "UPDATE users SET user_name=%s user_school=%s WHERE user_id=%s"
+                            cursor.execute(sql, (user_name, user_school, id))
+                            conn.commit()
 
+                    return redirect(url_for('profile', user_id = id))
+            
         except Exception as e:
             print(f"데이터베이스 조회 오류: {e}")
             return "오류가 발생했습니다. <a href='/'>돌아가기</a>"

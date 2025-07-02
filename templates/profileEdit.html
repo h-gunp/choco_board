@@ -11,14 +11,24 @@
             <h1><em><a href="/">초코파이 인사이드...</a></em></h1>
             <hr><p>초코파이에 대해 토론하는 곳 입니다..</p><hr>
             <h2>YOUR PROFILE</h2>
-            {% if user.pofile_image %}
-                <img scr="user.profile_image" width="100">
+            {% if user.profile_image %}
+                <img src="{{ url_for('uploads', filename='uploads/+user.profile_image) }}" width="100">
             {% else %}
                 <p><strong>프로필 이미지가 없습니다.</strong></p>
             {% endif %}
-            <form name="profile_image" action="/profileEdit" method="POST" enctype="multipart/form-data"></form>
-                
-                <input type="file" name="file">
+            <form method="POST" enctype="multipart/form-data">
+                <p>
+                    <label for="user_name">이름:</label>
+                    <input type="text" id="user_name" name="user_name" placeholder="이름" value="{{ user.user_name }}">
+                </p>
+                <p>
+                    <label for="user_school">학교:</label>
+                    <input type="text" id="user_school" name="user_school" placeholder="학교" value="{{ user.user_school }}">
+                </p>
+                <p>
+                    <label for="profile_image">프로필 이미지:</label>
+                    <input type="file" id="profile_image" name="profile_image">
+                </p>
                 <p><input type="submit" value="수정완료"></p>
             </form> 
         </body>

@@ -262,7 +262,7 @@ def profileEdit():
         try:
             if request.method == 'GET':
                 with conn.cursor() as cursor:
-                    sql = "SELECT * FROM users WHERE user_id = %s"
+                    sql = "SELECT * FROM users WHERE user_id=%s"
                     cursor.execute(sql, (id,))
                     user_info = cursor.fetchone()
                     return render_template('profileEdit.html', user=user_info)
@@ -274,7 +274,7 @@ def profileEdit():
                     
                     if profile_image and profile_image.filename:
                         with conn.cursor() as cursor:
-                            sql = "SELECT profile_image FROM users WHERE user_id = %s"
+                            sql = "SELECT profile_image FROM users WHERE user_id=%s"
                             cursor.execute(sql, (id,))
                             old_image = cursor.fetchone()
                             if old_image and old_image['profile_image']:
@@ -287,12 +287,12 @@ def profileEdit():
                         profile_image.save(new_image_path)
                         
                         with conn.cursor() as cursor:
-                            sql = "UPDATE users SET user_name=%s user_school=%s profile_image=%s WHERE user_id=%s"
+                            sql = "UPDATE users SET user_name=%s, user_school=%s, profile_image=%s WHERE user_id=%s"
                             cursor.execute(sql, (user_name, user_school, new_image, id))
                             conn.commit()
                     else:
                         with conn.cursor() as cursor:
-                            sql = "UPDATE users SET user_name=%s user_school=%s WHERE user_id=%s"
+                            sql = "UPDATE users SET user_name=%s, user_school=%s WHERE user_id=%s"
                             cursor.execute(sql, (user_name, user_school, id))
                             conn.commit()
 

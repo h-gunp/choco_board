@@ -12,7 +12,7 @@
                 <h1><em><a href="/">초코파이 인사이드...</a></em></h1>
                 <div class="nav">
                     {% if session['logged_in'] == True %}
-                        <a href="/profile/{{ session.user_id }}">내 프로필</a>
+                        <a href="/profile/{{ session.user_name }}">내 프로필</a>
                         <a href="/logout">로그아웃</a>
                     {% else %}    
                         <a href="/login">로그인</a> 
@@ -35,7 +35,11 @@
             <h3>게시글 목록</h3>
             {% if topics %}
                 {% for topic in topics %}
-                    <li><a href="/read/{{ topic.id }}">{{ topic.title }}</a></li>
+                    {% if topic.is_secret %}
+                        <li><a href="/read/{{ topic.id }}">{{topic.title}}🔒</a> <sapn class="nickname"><a href="/profile/{{ topic.post_user_name }}">작성자: {{ topic.post_user_name }}</a></sapn></li>
+                    {% else %}
+                        <li><a href="/read/{{ topic.id }}">{{ topic.title }}</a> <sapn class="nickname"><a href="/profile/{{ topic.post_user_name }}">작성자: {{ topic.post_user_name }}</a></sapn></li>
+                    {% endif %}
                 {% endfor %}
             {% else %}
                 <li>게시글이 없습니다.</li>

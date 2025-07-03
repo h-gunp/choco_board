@@ -18,3 +18,13 @@ function validateForm() {
 
     return true;
 }
+
+function togglePasswordField() {
+                var checkBox = document.getElementById("is_secret");
+                var passwordField = document.getElementById("password_field");
+                if (checkBox.checked == true){
+                    passwordField.style.display = "block";
+                } else {
+                    passwordField.style.display = "none";
+                }
+            }

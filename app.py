@@ -19,7 +19,7 @@ db_config = {
     'charset': 'utf8mb4'
 }
 
-UPLOAD_FOLDER = 'uploads'
+UPLOAD_FOLDER = 'static/uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
@@ -39,17 +39,6 @@ def init_db():
 
         with conn.cursor() as cursor:
             create_table_sql = """
-            CREATE TABLE IF NOT EXISTS topic (
-            id INT PRIMARY KEY AUTO_INCREMENT,
-            title VARCHAR(255) NOT NULL,
-            body TEXT NOT NULL,
-            user_name VARCHAR(100) NOT NULL
-            )
-            """
-            cursor.execute(create_table_sql)
-
-        with conn.cursor() as cursor:
-            create_table_sql = """
             CREATE TABLE IF NOT EXISTS users (
             id INT PRIMARY KEY AUTO_INCREMENT,
             user_id VARCHAR(100) NOT NULL,
@@ -57,6 +46,20 @@ def init_db():
             user_name VARCHAR(100) NOT NULL,
             user_school VARCHAR(100),
             profile_image VARCHAR(255)
+            )
+            """
+            cursor.execute(create_table_sql)
+
+        with conn.cursor() as cursor:
+            create_table_sql = """
+            CREATE TABLE IF NOT EXISTS topic (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            title VARCHAR(255) NOT NULL,
+            body TEXT NOT NULL,
+            post_user_id VARCHAR(100) NOT NULL,
+            post_user_name VARCHAR(100) NOT NULL,
+            is_secret INT DEFAULT 0,
+            secret_key VARCHAR(100)
             )
             """
             cursor.execute(create_table_sql)
@@ -148,9 +151,9 @@ def register():
             user_name = request.form['user_name']
             user_school = request.form['user_school']
 
-        # if " " in user_id or user_ps:
-        #     flash('아이디와 패스워드에 공백이 포함되면 안됩니다.')
-        #     return redirect(url_for('register'))
+        if " " in user_id or " " in user_ps:
+            flash('아이디와 패스워드에 공백이 포함되면 안됩니다.')
+            return redirect(url_for('register'))
         
         hashed_ps = generate_password_hash(user_ps)
         conn = get_db_connection()
@@ -226,8 +229,8 @@ def logout():
         flash('로그아웃 되었습니다.')
         return redirect(url_for('main'))
     
-@app.route('/profile/<user_id>')
-def profile(user_id):
+@app.route('/profile/<user_name>')
+def profile(user_name):
     conn = None
 
     if 'logged_in' not in session:
@@ -236,11 +239,10 @@ def profile(user_id):
     
     try:
         conn = get_db_connection()
-        user_id = session['user_id']
         user_info = []
         with conn.cursor() as cursor:
-            sql = "SELECT * FROM users WHERE user_id = %s"
-            cursor.execute(sql, (user_id,))
+            sql = "SELECT * FROM users WHERE user_name = %s"
+            cursor.execute(sql, (user_name,))
             user_info = cursor.fetchone()
             return render_template('profile.html', user=user_info)
 
@@ -257,6 +259,7 @@ def profileEdit():
         conn = None
         conn = get_db_connection()
         id = session['user_id']
+        name = session['user_name']
         user_info = []
         
         try:
@@ -296,7 +299,7 @@ def profileEdit():
                             cursor.execute(sql, (user_name, user_school, id))
                             conn.commit()
 
-                    return redirect(url_for('profile', user_id = id))
+                    return redirect(url_for('profile', user_name = name))
             
         except Exception as e:
             print(f"데이터베이스 조회 오류: {e}")
@@ -306,7 +309,7 @@ def profileEdit():
             if conn:
                 conn.close()
 
-@app.route('/read/<int:id>/')
+@app.route('/read/<int:id>/', methods=['GET', 'POST'])
 def read(id):
     conn = None
 
@@ -319,7 +322,7 @@ def read(id):
 
         with conn.cursor() as cursor:
             sql = "SELECT * FROM topic WHERE id = %s"
-            cursor.execute(sql, (id))
+            cursor.execute(sql, (id,))
             topic = cursor.fetchone()
 
         if topic is None:
@@ -328,9 +331,21 @@ def read(id):
         with conn.cursor() as cursor:
             conn = get_db_connection()
             sql="SELECT topic_id, file_name, file_path FROM files WHERE topic_id = %s"
-            cursor.execute(sql, (id))
+            cursor.execute(sql, (id,))
             file_info = cursor.fetchone()
 
+        if topic['is_secret']:
+            if request.method == 'POST':
+                post_ps = request.form.get('secret_key')
+                if post_ps == topic['secret_key']:
+                    session[f'topic_{id}_access'] = True
+                else:
+                    flash('비밀번호가 틀립니다.')
+                    return redirect(url_for('main'))
+                
+        if not session.get(f'topic_{id}_access') and topic['post_user_id'] != session.get('user_id'):
+             return render_template('read_secret.html', topic=topic)
+    
         return render_template('read.html',topic=topic, file=file_info)
 
     except Exception as e:
@@ -353,19 +368,21 @@ def create():
         if request.method == 'POST':
             title = request.form['title']
             body = request.form['body']
+            is_secret = 'is_secret' in request.form
+            secret_key = request.form.get('secret_key')
+            user_id = session['user_id']
             user_name = session['user_name']
-            
 
             with conn.cursor() as cursor:
-                sql = "INSERT INTO topic (title, body, user_name) VALUES (%s, %s, %s)"
-                cursor.execute(sql, (title, body, user_name))
+                sql = "INSERT INTO topic (title, body, post_user_id, post_user_name, is_secret, secret_key) VALUES (%s, %s, %s, %s, %s, %s)"
+                cursor.execute(sql, (title, body, user_id, user_name, is_secret, secret_key))
                 new_id = cursor.lastrowid
 
                 if request.files['file']:
                     f = request.files['file']
-                    f.save('uploads/'+ secure_filename(f.filename))
+                    f.save('static/uploads/'+ secure_filename(f.filename))
                     sql = "INSERT INTO files (topic_id, file_name, file_path) VALUES (%s, %s, %s)"
-                    cursor.execute(sql, (new_id, secure_filename(f.filename), 'uploads/'+ secure_filename(f.filename)))
+                    cursor.execute(sql, (new_id, secure_filename(f.filename), 'static/uploads/'+ secure_filename(f.filename)))
 
                 conn.commit()
                 return redirect(f'/read/{new_id}/')
@@ -388,16 +405,16 @@ def download(topic_id):
 
     conn = get_db_connection()
     with conn.cursor() as cursor:
-        sql = "SELECT file_name, file_path FROM files WHERE id = %s"
+        sql = "SELECT file_name, file_path FROM files WHERE topic_id = %s"
         cursor.execute(sql, (topic_id))
         file_info = cursor.fetchone()
 
     if file_info:
         file_name = file_info['file_name']
         file_path = file_info['file_path']
-        directroy = os.path.dirname(file_path)
+        directory = os.path.dirname(file_path)
         
-        return send_from_directory(directroy, file_name, as_attachment=True)
+        return send_from_directory(directory, file_name, as_attachment=True)
 
 @app.route('/update/<int:id>', methods=['GET', 'POST'])
 def update(id):
@@ -405,6 +422,7 @@ def update(id):
     if 'logged_in' not in session:
         flash('로그인이 필요한 서비스입니다.')
         return redirect(url_for('main'))
+    
     try:
         conn = get_db_connection()
         
@@ -416,18 +434,58 @@ def update(id):
                 sql = "UPDATE topic SET title=%s, body=%s WHERE id=%s"
                 cursor.execute(sql, (title, body, id))
                 conn.commit()
-                return redirect(f'/read/{id}/')
 
+            with conn.cursor() as cursor:
+                sql = "SELECT * FROM files WHERE topic_id=%s"
+                cursor.execute(sql, (id,))
+                old_file = cursor.fetchone()
+
+                if old_file:
+                    old_file_path = os.path.join(app.config['UPLOAD_FOLDER'], old_file['file_name'])
+                    if os.path.exists(old_file_path):
+                        os.remove(old_file_path)
+
+                if request.files['file']:
+                    new_file = request.files['file']
+                    if new_file.filename:
+                        filename = secure_filename(new_file.filename)
+                        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                        new_file.save(filepath)
+
+                        with conn.cursor() as cursor:
+                            sql = "SELECT id FROM files WHERE topic_id = %s"
+                            cursor.execute(sql, (id,))
+                            existing_file = cursor.fetchone()
+
+                            if existing_file:
+                                sql = "UPDATE files SET file_name = %s, file_path = %s WHERE topic_id = %s"
+                                cursor.execute(sql, (filename, filepath, id))
+                            else:
+                                sql = "INSERT INTO files (topic_id, file_name, file_path) VALUES (%s, %s, %s)"
+                                cursor.execute(sql, (id, filename, filepath))
+                            conn.commit()
+                
+            return redirect(f'/read/{id}/')
+            
         else:
             with conn.cursor() as cursor:
                 sql = "SELECT * FROM topic WHERE id = %s"
                 cursor.execute(sql, (id,))
                 topic = cursor.fetchone()
 
-            if topic is None:
-                return "존재하지 않는 게시글입니다. <a href='/'>돌아가기</a>"
+            with conn.cursor() as cursor:
+                sql = "SELECT * FROM files WHERE topic_id=%s"
+                cursor.execute(sql, (id,))
+                file_info = cursor.fetchone()
 
-            return render_template('update.html', topic=topic)
+            if topic.get('post_user_id') == session.get('user_id'):
+                if topic is None:
+                    return "존재하지 않는 게시글입니다. <a href='/'>돌아가기</a>"
+
+                return render_template('update.html', topic=topic, file=file_info)
+            else:
+                flash('권한이 없습니다.')
+                return redirect(url_for('main'))
             
     except Exception as e:
         print(f"데이터 처리 오류: {e}")
@@ -442,14 +500,30 @@ def delete(id):
     if 'logged_in' not in session:
         flash('로그인이 필요한 서비스입니다.')
         return redirect(url_for('main'))
+    
     try:
         conn = get_db_connection()
+
         with conn.cursor() as cursor:
             sql = "DELETE FROM topic WHERE id = %s"
             cursor.execute(sql, (id,))
-            conn.commit()
-            return redirect('/')
-    
+        
+        with conn.cursor() as cursor:
+            sql = "SELECT * FROM files WHERE topic_id = %s"
+            cursor.execute(sql, (id,))
+            exist_file = cursor.fetchone()
+
+            if exist_file:
+                exist_file_path = os.path.join(app.config['UPLOAD_FOLDER'], exist_file['file_name'])
+                if os.path.exists(exist_file_path):
+                    os.remove(exist_file_path)
+                with conn.cursor() as cursor:
+                    sql = "DELETE FROM files WHERE topic_id = %s"
+                    cursor.execute(sql, (id,))
+                    
+        conn.commit()
+        return redirect('/')
+           
     except Exception as e:
         print(f"데이터 처리 오류: {e}")
         return "오류가 발생했습니다. <a href='/'>돌아가기</a>"

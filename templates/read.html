@@ -23,9 +23,9 @@
                     </a>
                 </p>
             {% endif %}
-    
-            <a href="/update/{{ topic.id }}"><input type="button" value="수정하기"></a>
-            <form action="/delete/{{ topic.id }}" method="POST" style="display: inline;">
+            {% if topic. %}
+            <a href="/update/{{ topic.post_user_id }}"><input type="button" value="수정하기"></a>
+            <form action="/delete/{{ topic.post_user_id }}" method="POST" style="display: inline;">
                 <input type="submit" value="삭제하기" onclick="return confirm('정말로 삭제하시겠습니까?');">
             </form>
             <a href="/"><input type="button" value="목록"></a>

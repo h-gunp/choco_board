@@ -74,6 +74,13 @@ input[value="삭제하기"] {
     background-color: #e45651;
 }
 
+.nickname{
+    text-decoration: none;
+    color: #65aaca;
+    font-size: 12px;
+    margin-left: 30px;
+}
+
 .paging {
     text-align: center;
     margin-top: 20px;
@@ -93,3 +100,4 @@ input[value="삭제하기"] {
 .paging a:hover {
     background-color: #f4f4f4;
 }
+

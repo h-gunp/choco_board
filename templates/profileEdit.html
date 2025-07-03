@@ -12,7 +12,7 @@
             <hr><p>초코파이에 대해 토론하는 곳 입니다..</p><hr>
             <h2>YOUR PROFILE</h2>
             {% if user.profile_image %}
-                <img src="{{ url_for('uploads', filename='uploads/+user.profile_image) }}" width="100">
+                <img src="{{ url_for('static', filename='uploads/' + user.profile_image) }}" width="300">
             {% else %}
                 <p><strong>프로필 이미지가 없습니다.</strong></p>
             {% endif %}

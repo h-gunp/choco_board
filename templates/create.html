@@ -15,6 +15,13 @@
                 <p><input type="text" name="title" placeholder="제목"></p>
                 <p><textarea name="body" placeholder="게시글 작성"></textarea></p>
                 <input type="file" name="file">
+                <p>
+                <input type="checkbox" name="is_secret" id="is_secret" onchange="togglePasswordField()">
+                <label for="is_secret">비밀글로 설정</label>
+                </p>
+                <p id="password_field" style="display: none;">
+                    <input type="password" name="secret_key" placeholder="비밀글 비밀번호">
+                </p>
                 <p><input type="submit" value="작성완료"></p>
             </form>
 

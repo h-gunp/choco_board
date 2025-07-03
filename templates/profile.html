@@ -10,9 +10,9 @@
         <body>
             <h1><em><a href="/">초코파이 인사이드...</a></em></h1>
             <hr><p>초코파이에 대해 토론하는 곳 입니다..</p><hr>
-            <h2>YOUR PROFILE</h2>
-            {% if user.pofile_image %}
-                <img scr="user.profile_image" width="100">
+            <h2>{{ user.user_name }}'s PROFILE</h2>
+            {% if user.profile_image %}
+                <img src="{{ url_for('static', filename='uploads/' + user.profile_image) }}" width="300">
             {% else %}
                 <p><strong>프로필 이미지가 없습니다.</strong></p>
             {% endif %}

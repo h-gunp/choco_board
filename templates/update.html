@@ -10,9 +10,20 @@
         <body>
                 <h1><em><a href="/">초코파이 인사이드...</a></em></h1>
                     <hr><p>초코파이에 대해 토론하는 곳 입니다..</p><hr>
-                <form action="/update/{{ topic.id }}" method="POST">
+                <form action="/update/{{ topic.id }}" enctype="multipart/form-data" method="POST">
                     <p><input type="text" name="title" placeholder="제목" value="{{ topic.title }}"></p>
                     <p><textarea name="body" placeholder="게시글 작성">{{ topic.body }}</textarea></p>
+                    
+                    {% if file %}
+                        <hr>
+                        <p>
+                            <strong>첨부파일:</strong>
+                                {{ file.file_name }}
+                            </a>
+                        </p>
+                    {% endif %}
+                    <input type="file" name="file">
+
                     <p><input type="submit" value="작성완료"></p>
                 </form>
         </body>

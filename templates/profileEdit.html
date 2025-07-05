@@ -8,9 +8,18 @@
 </head>
     <div class="container">
         <body>
-            <h1><em><a href="/">초코파이 인사이드...</a></em></h1>
+            <h1><em><a href="{{ url_for('main.main') }}">초코파이 인사이드...</a></em></h1>
             <hr><p>초코파이에 대해 토론하는 곳 입니다..</p><hr>
             <h2>YOUR PROFILE</h2>
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="flash">
+                    {% for message in messages %}
+                        <p>{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            {% endwith %}
             {% if user.profile_image %}
                 <img src="{{ url_for('static', filename='uploads/' + user.profile_image) }}" width="300">
             {% else %}

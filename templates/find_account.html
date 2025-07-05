@@ -8,10 +8,19 @@
 </head>
     <div class="container">
         <body>
-            <h1><em><a href="/">초코파이 인사이드...</a></em></h1>
+            <h1><em><a href="{{ url_for('main.main') }}">초코파이 인사이드...</a></em></h1>
             <hr><p>초코파이에 대해 토론하는 곳 입니다..</p><hr>
             
             <h2>FIND YOUR ACCOUNT</h2>
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="flash">
+                    {% for message in messages %}
+                        <p>{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            {% endwith %}
             <form method="POST">
                 <p><input type="text" name="user_name" placeholder="이름" required></p>
                 <p><input type="text" name="user_school" placeholder="학교" required></p>

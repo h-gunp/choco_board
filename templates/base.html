@@ -9,16 +9,16 @@
     <div class="container">
         <body>
             <div class="header">
-                <h1><em><a href="/">초코파이 인사이드...</a></em></h1>
+                <h1><em><a href="{{ url_for('main.main') }}">초코파이 인사이드...</a></em></h1>
                 <div class="nav">
                     {% if session['logged_in'] == True %}
-                        <a href="/profile/{{ session.user_name }}">내 프로필</a>
-                        <a href="/logout">로그아웃</a>
+                        <a href="{{ url_for('user.profile', user_name=session.user_name) }}">내 프로필</a>
+                        <a href="{{ url_for('auth.logout') }}">로그아웃</a>
                     {% else %}    
-                        <a href="/login">로그인</a> 
-                        <a href="/register">회원가입</a>
-                        <a href="/find_account">아이디 찾기</a>
-                        <a href="/reset_password">비밀번호 초기화</a>
+                        <a href="{{ url_for('auth.login') }}">로그인</a> 
+                        <a href="{{ url_for('auth.register') }}">회원가입</a>
+                        <a href="{{ url_for('auth.find_account') }}">아이디 찾기</a>
+                        <a href="{{ url_for('auth.reset_password') }}">비밀번호 초기화</a>
                     {% endif %}
                 </div>
             </div>
@@ -38,9 +38,9 @@
             {% if topics %}
                 {% for topic in topics %}
                     {% if topic.is_secret %}
-                        <li><a href="/read/{{ topic.id }}">{{topic.title}}🔒</a> <sapn class="nickname"><a href="/profile/{{ topic.post_user_name }}">작성자: {{ topic.post_user_name }}</a></sapn></li>
+                        <li><a href="{{ url_for('topic.read', id=topic.id) }}">{{topic.title}}🔒</a> <sapn class="nickname"><a href="{{ url_for('user.profile', user_name=topic.post_user_name) }}">작성자: {{ topic.post_user_name }}</a></sapn></li>
                     {% else %}
-                        <li><a href="/read/{{ topic.id }}">{{ topic.title }}</a> <sapn class="nickname"><a href="/profile/{{ topic.post_user_name }}">작성자: {{ topic.post_user_name }}</a></sapn></li>
+                        <li><a href="{{ url_for('topic.read', id=topic.id) }}">{{ topic.title }}</a> <sapn class="nickname"><a href="{{ url_for('user.profile', user_name=topic.post_user_name) }}">작성자: {{ topic.post_user_name }}</a></sapn></li>
                     {% endif %}
                 {% endfor %}
             {% else %}
@@ -70,9 +70,9 @@
         
         <br><br>
         
-        <a href="/create/"><input type="button" value="글쓰기"></a>
+        <a href="{{ url_for('topic.create') }}"><input type="button" value="글쓰기"></a>
         
-            <form action="/search/" method="GET">
+            <form action="{{ url_for('topic.search') }}" method="GET">
                 <select name="search_menu">
                     <option value="title">제목</option>
                     <option value="body">내용</option>
@@ -80,7 +80,7 @@
                 </select>
 
                 <input type="text" placeholder="입력하시오." name="search_name" style ="width: 250px; padding: 5px;">
-                <a href="search.html"><input type="submit" value="검색"></a>
+                <a href="{{ url_for('topic.search') }}"><input type="submit" value="검색"></a>
             </form>
         </body>
     </div>

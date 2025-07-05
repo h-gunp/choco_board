@@ -8,17 +8,14 @@ topic_bp = Blueprint('topic', __name__)
 db_config = None
 upload_folder = None
 
-ALLOWED_EXTENTIONS = {'txt', 'png', 'jpg', 'jpeg'}
-ALLOWED_MIMETYPES = {'text/plain', 'image/png', 'image/jpg', 'image/jpeg'}
+ALLOWED_EXTENTIONS = ('txt', 'png', 'jpg', 'jpeg')
+ALLOWED_MIMETYPES = ('text/plain', 'image/png', 'image/jpg', 'image/jpeg')
 MAX_FILE_SIZE = 30*1024*1024
 
 def file_allow(filename, mimetype):
-    if filename not in ALLOWED_EXTENTIONS and '.':
-        return False
-    if mimetype not in ALLOWED_MIMETYPES:
-        return False
-    
-    return True
+    return ('.' in filename and
+            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENTIONS and
+            mimetype in ALLOWED_MIMETYPES)
 
 def get_db_connection():
     return pymysql.connect(
@@ -104,10 +101,6 @@ def create():
 
             if 'file' in request.files and request.files['file'].filename != '':
                 f = request.files['file']
-
-                filename = secure_filename(f.filename)
-                filepath = os.path.join(upload_folder, filename)
-                f.save(filepath)
                 if not file_allow(f.filename, f.mimetype):                                                   
                     flash('허용되지 않는 파일 형식입니다.')                                                    
                     return redirect(url_for('topic.create'))                                                   
@@ -116,6 +109,11 @@ def create():
                     flash('최대 30MB까지 허용됩니다.')                                
                     return redirect(url_for('topic.create'))                                                   
                 f.seek(0)
+
+                filename = secure_filename(f.filename)
+                filepath = os.path.join(upload_folder, filename)
+                f.save(filepath)
+            
                 sql_file = "INSERT INTO files (topic_id, file_name, file_path) VALUES (%s, %s, %s)"
                 cursor.execute(sql_file, (new_id, filename, filepath))
 

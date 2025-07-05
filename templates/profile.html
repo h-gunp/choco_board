@@ -11,6 +11,15 @@
             <h1><em><a href="/">초코파이 인사이드...</a></em></h1>
             <hr><p>초코파이에 대해 토론하는 곳 입니다..</p><hr>
             <h2>{{ user.user_name }}'s PROFILE</h2>
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="flash">
+                    {% for message in messages %}
+                        <p>{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            {% endwith %}
             {% if user.profile_image %}
                 <img src="{{ url_for('static', filename='uploads/' + user.profile_image) }}" width="300">
             {% else %}
@@ -20,8 +29,9 @@
             <P><strong>학교</strong>:{{ user.user_school }}</P>
             {% if user.user_id == session['user_id'] %}
                 <P><strong>메일</strong>:{{ user.user_mail }}</P>
-                <a href="/profile/edit">프로필 수정</a>
-                <a href="/change_password">비밀번호 변경</a>
+                <a href="{{ url_for('user.profileEdit') }}">프로필 수정</a>
+                <a href="{{ url_for('auth.change_password') }}">비밀번호 변경</a>
+                <a href="{{ url_for('user.delete_account') }}" style="color: red;">회원 탈퇴</a>
             {% endif %}            
         </body>
     </div>

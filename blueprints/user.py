@@ -1,5 +1,6 @@
 from flask import Blueprint, request, render_template, redirect, url_for, flash, session
 from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash, check_password_hash
 import pymysql
 import os
 
@@ -8,17 +9,14 @@ user_bp = Blueprint('user', __name__)
 db_config = None
 upload_folder = None
 
-ALLOWED_EXTENTIONS = {'png', 'jpg', 'jpeg'}
-ALLOWED_MIMETYPES = {'image/png', 'image/jpg', 'image/jpeg'}
+ALLOWED_EXTENTIONS = ('png', 'jpg', 'jpeg')
+ALLOWED_MIMETYPES = ('image/png', 'image/jpg', 'image/jpeg')
 MAX_FILE_SIZE = 30*1024*1024
 
 def file_allow(filename, mimetype):
-    if filename not in ALLOWED_EXTENTIONS and '.':
-        return False
-    if mimetype not in ALLOWED_MIMETYPES:
-        return False
-    
-    return True
+    return ('.' in filename and 
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENTIONS and 
+           mimetype in ALLOWED_MIMETYPES)
 
 def get_db_connection():
     return pymysql.connect(
@@ -60,6 +58,68 @@ def profile(user_name):
         if conn:
             conn.close()
 
+@user_bp.route('/delete_account', methods=['GET', 'POST'])
+def delete_account():
+    if 'logged_in' not in session:
+        flash('로그인이 필요한 서비스입니다.')
+        return redirect(url_for('auth.login'))
+
+    conn = None
+    try:
+        conn = get_db_connection()
+        user_id = session.get('user_id')
+
+        if request.method == 'POST':
+            password = request.form.get('password')
+
+            with conn.cursor() as cursor:
+                sql = "SELECT user_ps, profile_image FROM users WHERE user_id = %s"
+                cursor.execute(sql, (user_id,))
+                user_info = cursor.fetchone()
+
+            if not user_info or not check_password_hash(user_info['user_ps'], password):
+                flash('비밀번호가 올바르지 않습니다.')
+                return render_template('delete_account.html')
+
+            if user_info['profile_image']:
+                profile_image_path = os.path.join(upload_folder, user_info['profile_image'])
+                if os.path.exists(profile_image_path):
+                    os.remove(profile_image_path)
+
+            with conn.cursor() as cursor:
+                sql_select_topic_files = "SELECT f.file_name FROM files f JOIN topic t ON f.topic_id = t.id WHERE t.post_user_id = %s"
+                cursor.execute(sql_select_topic_files, (user_id,))
+                topic_files = cursor.fetchall()
+                for file_entry in topic_files:
+                    file_path_to_delete = os.path.join(upload_folder, file_entry['file_name'])
+                    if os.path.exists(file_path_to_delete):
+                        os.remove(file_path_to_delete)
+
+            with conn.cursor() as cursor:
+                sql_delete_topics = "DELETE FROM topic WHERE post_user_id = %s"
+                cursor.execute(sql_delete_topics, (user_id,))
+
+            with conn.cursor() as cursor:
+                sql_delete_user = "DELETE FROM users WHERE user_id = %s"
+                cursor.execute(sql_delete_user, (user_id,))
+            
+            conn.commit()
+            session.clear()
+            flash('회원 탈퇴가 성공적으로 완료되었습니다.')
+            return redirect(url_for('main.main'))
+
+        return render_template('delete_account.html')
+
+    except Exception as e:
+        print(f"회원 탈퇴 오류: {e}")
+        if conn:
+            conn.rollback()
+        flash('회원 탈퇴 중 오류가 발생했습니다.')
+        return redirect(url_for('main.main'))
+    finally:
+        if conn:
+            conn.close()
+
 @user_bp.route('/profile/edit', methods=['GET', 'POST'])
 def profileEdit():
     if 'logged_in' not in session:
@@ -86,12 +146,16 @@ def profileEdit():
         if profile_image and profile_image.filename:
             if not file_allow(profile_image.filename, profile_image.mimetype):                                                   
                     flash('허용되지 않는 파일 형식입니다.')                                                    
-                    return redirect(url_for('topic.create'))                                                   
+                    return redirect(url_for('user.profileEdit'))                                                   
                                                                                                     
-            if len(profile_image.read()) > MAX_FILE_SIZE:                                                              
-                    flash('최대 30MB까지 허용됩니다.')                                
-                    return redirect(url_for('topic.create'))                                                   
+            profile_image.seek(0, os.SEEK_END)
+            file_size = profile_image.tell()
             profile_image.seek(0)
+
+            if file_size > MAX_FILE_SIZE:                                                              
+                    flash('최대 30MB까지 허용됩니다.')                                
+                    return redirect(url_for('user.profileEdit'))                                                   
+            
             image_filename = secure_filename(f"profile_{user_id}_{profile_image.filename}")
             new_image_path = os.path.join(upload_folder, image_filename)
             profile_image.save(new_image_path)

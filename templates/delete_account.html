@@ -4,12 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <title>{{ topic.title }}</title>
+    <title>회원 탈퇴</title>
 </head>
     <div class="container">
         <body>
-            <h1><em><a href="/">초코파이 인사이드...</a></em></h1>
+            <h1><em><a href="{{ url_for('main.main') }}">초코파이 인사이드...</a></em></h1>
             <hr><p>초코파이에 대해 토론하는 곳 입니다..</p><hr>
+            
+            <h2>회원 탈퇴</h2>
+            <p style="color: red;">회원 탈퇴 시 모든 게시글과 프로필 정보가 영구적으로 삭제됩니다. 그래도 정말 탈퇴하시겠습니까?</p>
             {% with messages = get_flashed_messages() %}
             {% if messages %}
                 <div class="flash">
@@ -19,12 +22,9 @@
                 </div>
             {% endif %}
             {% endwith %}
-            <h2>🔒 비밀글입니다</h2>
-            <p>글을 보시려면 비밀번호를 입력해주세요.</p>
-            
-            <form action="{{ url_for('topic.read', id=topic.id) }}" method="POST">
-                <p><input type="text" name="secret_key" placeholder="비밀번호"></p>
-                <p><input type="submit" value="확인"></p>
+            <form method="POST">
+                <p><input type="password" name="password" placeholder="비밀번호를 입력" required></p>
+                <p><input type="submit" value="회원 탈퇴"></p>
             </form>
         </body>
     </div>

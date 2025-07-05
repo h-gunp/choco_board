@@ -8,9 +8,17 @@
 </head>
     <div class="container">
         <body>
-            <h1><em><a href="/">초코파이 인사이드...</a></em></h1>
+            <h1><em><a href="{{ url_for('main.main') }}">초코파이 인사이드...</a></em></h1>
             <hr><p>초코파이에 대해 토론하는 곳 입니다..</p><hr>
-
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="flash">
+                    {% for message in messages %}
+                        <p>{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            {% endwith %}
             <h1>인증 코드 확인</h1>
             <p><b>{{ mail }}</b>로 발송된 6자리 인증 코드를 입력해주세요.</p>
             <form method="post">

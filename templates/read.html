@@ -18,7 +18,7 @@
                 <hr>
                 <p>
                     <strong>첨부파일:</strong>
-                    <a href="{{ url_for('download', topic_id=file.topic_id) }}">
+                    <a href="{{ url_for('topic.download', topic_id=file.topic_id) }}">
                         {{ file.file_name }}
                     </a>
                 </p>
@@ -29,7 +29,7 @@
                     <input type="submit" value="삭제하기" onclick="return confirm('정말로 삭제하시겠습니까?');">
                 </form>
             {% endif %}
-            <a href="/"><input type="button" value="목록"></a>
+            <a href="{{ url_for('main.main') }}"><input type="button" value="목록"></a>
     </body>
 </div>
 </html>

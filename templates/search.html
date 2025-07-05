@@ -14,7 +14,7 @@
                 <h3><em><mark>{{ search_name }}</mark></em> 게시글 목록</h3>
                 {% if things %}
                     {% for thing in things %}
-                        <li><a href="/read/{{ thing.id }}/">{{ thing.title }}</a></li>
+                        <li><a href="{{ url_for('topic.read', id=thing.id) }}">{{ thing.title }}</a></li>
                     {% endfor %}
                 {% else %}
                     <li>게시글이 없습니다.</li>

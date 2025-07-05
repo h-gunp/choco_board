@@ -10,8 +10,16 @@
         <body>
             <h1><em><a href="/">초코파이 인사이드...</a></em></h1>
             <hr><p>초코파이에 대해 토론하는 곳 입니다..</p><hr>
-            
-            <form name="createForm" action="/create/" method="POST" enctype="multipart/form-data" onsubmit="return validateForm()">
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="flash">
+                    {% for message in messages %}
+                        <p>{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            {% endwith %}
+            <form name="createForm" action="{{ url_for('topic.create') }}" method="POST" enctype="multipart/form-data" onsubmit="return validateForm()">
                 <p><input type="text" name="title" placeholder="제목"></p>
                 <p><textarea name="body" placeholder="게시글 작성"></textarea></p>
                 <p>

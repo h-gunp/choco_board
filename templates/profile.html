@@ -18,8 +18,11 @@
             {% endif %}
             <P><strong>이름</strong>:{{ user.user_name }}</P>
             <P><strong>학교</strong>:{{ user.user_school }}</P>
-
-            <a href="/profile/edit">프로필 수정</a>
+            {% if user.user_id == session['user_id'] %}
+                <P><strong>메일</strong>:{{ user.user_mail }}</P>
+                <a href="/profile/edit">프로필 수정</a>
+                <a href="/change_password">비밀번호 변경</a>
+            {% endif %}            
         </body>
     </div>
 </html>

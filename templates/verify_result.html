@@ -11,6 +11,15 @@
             <h1><em><a href="/">초코파이 인사이드...</a></em></h1>
             <hr><p>초코파이에 대해 토론하는 곳 입니다..</p><hr>
 
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="flash">
+                    {% for message in messages %}
+                        <p>{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            {% endwith %}
             <h1>인증 {{ status }}</h1>
             <p>{{ message }}</p>
             <a href="{{ url_for('main') }}">메인으로 돌아가기</a>

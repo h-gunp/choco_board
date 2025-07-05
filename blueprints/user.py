@@ -8,6 +8,18 @@ user_bp = Blueprint('user', __name__)
 db_config = None
 upload_folder = None
 
+ALLOWED_EXTENTIONS = {'png', 'jpg', 'jpeg'}
+ALLOWED_MIMETYPES = {'image/png', 'image/jpg', 'image/jpeg'}
+MAX_FILE_SIZE = 30*1024*1024
+
+def file_allow(filename, mimetype):
+    if filename not in ALLOWED_EXTENTIONS and '.':
+        return False
+    if mimetype not in ALLOWED_MIMETYPES:
+        return False
+    
+    return True
+
 def get_db_connection():
     return pymysql.connect(
         host=db_config['host'],
@@ -72,6 +84,14 @@ def profileEdit():
         
         image_filename_to_save = None
         if profile_image and profile_image.filename:
+            if not file_allow(profile_image.filename, profile_image.mimetype):                                                   
+                    flash('허용되지 않는 파일 형식입니다.')                                                    
+                    return redirect(url_for('topic.create'))                                                   
+                                                                                                    
+            if len(profile_image.read()) > MAX_FILE_SIZE:                                                              
+                    flash('최대 30MB까지 허용됩니다.')                                
+                    return redirect(url_for('topic.create'))                                                   
+            profile_image.seek(0)
             image_filename = secure_filename(f"profile_{user_id}_{profile_image.filename}")
             new_image_path = os.path.join(upload_folder, image_filename)
             profile_image.save(new_image_path)

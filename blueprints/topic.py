@@ -8,6 +8,18 @@ topic_bp = Blueprint('topic', __name__)
 db_config = None
 upload_folder = None
 
+ALLOWED_EXTENTIONS = {'txt', 'png', 'jpg', 'jpeg'}
+ALLOWED_MIMETYPES = {'text/plain', 'image/png', 'image/jpg', 'image/jpeg'}
+MAX_FILE_SIZE = 30*1024*1024
+
+def file_allow(filename, mimetype):
+    if filename not in ALLOWED_EXTENTIONS and '.':
+        return False
+    if mimetype not in ALLOWED_MIMETYPES:
+        return False
+    
+    return True
+
 def get_db_connection():
     return pymysql.connect(
         host=db_config['host'],
@@ -92,10 +104,18 @@ def create():
 
             if 'file' in request.files and request.files['file'].filename != '':
                 f = request.files['file']
+
                 filename = secure_filename(f.filename)
                 filepath = os.path.join(upload_folder, filename)
                 f.save(filepath)
-                
+                if not file_allow(f.filename, f.mimetype):                                                   
+                    flash('허용되지 않는 파일 형식입니다.')                                                    
+                    return redirect(url_for('topic.create'))                                                   
+                                                                                                    
+                if len(f.read()) > MAX_FILE_SIZE:                                                              
+                    flash('최대 30MB까지 허용됩니다.')                                
+                    return redirect(url_for('topic.create'))                                                   
+                f.seek(0)
                 sql_file = "INSERT INTO files (topic_id, file_name, file_path) VALUES (%s, %s, %s)"
                 cursor.execute(sql_file, (new_id, filename, filepath))
 
@@ -115,6 +135,10 @@ def create():
 
 @topic_bp.route('/download/<int:topic_id>')
 def download(topic_id):
+    if 'logged_in' not in session:
+        flash('로그인이 필요한 서비스입니다.')
+        return redirect(url_for('auth.login'))
+    
     conn = None
     try:
         conn = get_db_connection()
@@ -174,6 +198,14 @@ def update(id):
 
             if 'file' in request.files and request.files['file'].filename != '':
                 new_file = request.files['file']
+                if not file_allow(new_file.filename, new_file.mimetype):                                                   
+                    flash('허용되지 않는 파일 형식입니다.')                                                    
+                    return redirect(url_for('topic.create'))                                                   
+                                                                                                    
+                if len(new_file.read()) > MAX_FILE_SIZE:                                                              
+                    flash('최대 30MB까지 허용됩니다.')                                
+                    return redirect(url_for('topic.create'))                                                   
+                new_file.seek(0)
                 filename = secure_filename(new_file.filename)
                 filepath = os.path.join(upload_folder, filename)
                 

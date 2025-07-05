@@ -173,7 +173,7 @@ def reset_password():
                 msg = Message(
                     subject="초코파이 인사이드 이메일 인증 코드입니다.",
                     recipients=[user_email],
-                    body=f"안녕하세요! 요청하신 인증 코드는 [{verification_code}] 입니다."
+                    body=f"요청하신 인증 코드는 [{verification_code}] 입니다."
                 )
                 mail.send(msg)
                 flash('이메일로 인증 코드를 발송했습니다.')

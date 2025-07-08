@@ -24,8 +24,8 @@
                 </p>
             {% endif %}
             {% if topic.post_user_id == session['user_id'] %}
-                <a href="/update/{{ topic.id }}"><input type="button" value="수정하기"></a>
-                <form action="/delete/{{ topic.id }}" method="POST" style="display: inline;">
+                <a href="{{ url_for('topic.update', id=topic.id) }}"><input type="button" value="수정하기"></a>
+                <form action="{{ url_for('topic.delete', id=topic.id) }}" method="POST" style="display: inline;">
                     <input type="submit" value="삭제하기" onclick="return confirm('정말로 삭제하시겠습니까?');">
                 </form>
             {% endif %}
